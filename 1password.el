@@ -9,7 +9,7 @@
 ;; Package-Requires: ((emacs "24.4") (subr-x))
 ;; Last-Updated:
 ;;           By:
-;;     Update #: 69
+;;     Update #: 70
 ;; URL:
 ;; Doc URL:
 ;; Keywords:
