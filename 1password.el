@@ -9,7 +9,7 @@
 ;; Package-Requires: ((emacs "24.4") (subr-x))
 ;; Last-Updated:
 ;;           By:
-;;     Update #: 70
+;;     Update #: 136
 ;; URL:
 ;; Doc URL:
 ;; Keywords:
@@ -92,6 +92,36 @@ This will set OP_SESSION_* variable in Emacs env."
           (clone-buffer "*op output*" t)
           (error "Cannot find session settings in op output"))
         (setenv (match-string 1) (match-string 2))))))
+
+(defun op-get-item (id error-location)
+  "Get 1password item JSON by ID.
+
+Returns 0 on success. On error, returns non-0 and writes the
+stderr to ERROR-LOCATION"
+  (call-process "op" nil `(t ,error-location) nil "--cache" "get" "item" id))
+
+(defun op-get-password (id)
+  "Get a password for a record with given ID."
+  (interactive)
+  (let ((error-location (make-temp-file "op")))
+    (with-temp-buffer
+      (unwind-protect
+          (unless (= (op-get-item id error-location) 0)
+            (erase-buffer)
+            (insert-file-contents error-location)
+            (goto-char (point-min))
+            (when (null (search-forward "You are not currently signed in." nil t))
+              (goto-char (point-min))
+              (error (buffer-string)))
+            (op-signin)
+            (erase-buffer)
+            (unless (= (op-get-item id error-location) 0)
+              (erase-buffer)
+              (insert-file-contents error-location)
+              (error (buffer-string))))
+        (delete-file error-location))
+      (goto-char (point-min))
+      (gethash "password" (gethash "details" (json-parse-buffer))))))
 
 (provide 'op)
 
